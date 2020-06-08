@@ -6,4 +6,16 @@ build-backend = "flit_core.buildapi"
 module = "bike_model"
 author = "patricia llull"
 author-email = "patricia.llull@gmail.com"
+requires = [
+  "pandas",
+  "scikit-learn",
+]
 
+[tool.flit.metadata.requires-extra]
+dev = [
+  "black",
+  "notebook",
+  "pytest",
+  "pytest-cov",
+
+]
