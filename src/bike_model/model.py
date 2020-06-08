@@ -119,6 +119,10 @@ def split_train_test(hour):
     train = hour_train.drop(columns=["dteday", "casual", "atemp", "registered"])
     test = hour_test.drop(columns=["dteday", "casual", "atemp", "registered"])
 
+    # Separate features from target on train set
+    train_X = train.drop(columns = ["cnt"], axis=1)
+    train_y = train["cnt"]
+    
     # Separate features from target on the test set
     test_X = test.drop(columns=["cnt"], axis=1)
     test_y = test["cnt"]
