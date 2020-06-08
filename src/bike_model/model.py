@@ -9,7 +9,7 @@ from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from scipy.stats import skew
 from sklearn.ensemble import RandomForestRegressor
 
-from ie_bike_model.util import read_data, get_season, get_model_path
+from bike_model.util import read_data, get_season, get_model_path
 
 US_holidays = calendar().holidays()
 
