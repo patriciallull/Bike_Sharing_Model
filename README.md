@@ -3,6 +3,9 @@
 ## Usage
 
 To install the library:
+```
+$ # pip install .
+```
 
 ```python
 >>> import datetime as dt
