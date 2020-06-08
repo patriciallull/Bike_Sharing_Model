@@ -37,8 +37,7 @@ def get_season(date):
         return 2
     elif SUMMER_SOLSTICE <= date < FALL_EQUINOX:
         return 3
-    elif FALL_EQUINOX y<= date < WINTER_SOLSTICE:
+    elif FALL_EQUINOX <= date < WINTER_SOLSTICE:
         return 4
     else:
         return 1
-        
