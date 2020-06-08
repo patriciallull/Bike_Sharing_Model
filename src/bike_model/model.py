@@ -8,36 +8,44 @@ import joblib
 from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from scipy.stats import skew
 from sklearn.ensemble import RandomForestRegressor
-#from bike_model.util import *
+
+# from bike_model.util import *
 
 US_holidays = calendar().holidays()
 
+
 def feature_engineering(hour):
-    hour = hour.copy() #make a copy to save ram; don't modify original csv
+    hour = hour.copy()  # make a copy to save ram; don't modify original csv
 
     # Office hours rentals
-    hour["IsOfficeHour"] = np.where((hour["hr2"]>=9) & (hour["hr2"]<17) & (hour["weekday2"] == 1),1,0)
+    hour["IsOfficeHour"] = np.where(
+        (hour["hr2"] >= 9) & (hour["hr2"] < 17) & (hour["weekday2"] == 1), 1, 0
+    )
     hour["IsOfficeHour"] = hour["IsOfficeHour"].astype("category")
 
     # Daytime rentals
-    hour["IsDayTime"] = np.where((hour["hr2"]>=6) & (hour["hr2"] < 22),1, 0)
+    hour["IsDayTime"] = np.where((hour["hr2"] >= 6) & (hour["hr2"] < 22), 1, 0)
     hour["IsDayTime"] = hour["IsDayTime"].astype("category")
 
     # Rush hour rentals
-        # Morning
-    hour["IsRushMorning"] = np.where((hour["hr2"] >=6)&(hour["hr2"]<10) & (hour["weekday2"] == 1),1,0)
+    # Morning
+    hour["IsRushMorning"] = np.where(
+        (hour["hr2"] >= 6) & (hour["hr2"] < 10) & (hour["weekday2"] == 1), 1, 0
+    )
     hour["IsRushMorning"] = hour["IsRushMorning"].astype("category")
-        # Evening
-    hour["IsRushEvening"] = np.where((hour["hr2"]>=15) & (hour["hr2"]<19) & (hour["weekday2"] == 1),1,0)
+    # Evening
+    hour["IsRushEvening"] = np.where(
+        (hour["hr2"] >= 15) & (hour["hr2"] < 19) & (hour["weekday2"] == 1), 1, 0
+    )
     hour["IsRushEvening"] = hour["IsRushEvening"].astype("category")
 
     # Seasons rentals
-    hour["IsHighSeason"] = np.where((hour["season2"]== 3),1,0)
+    hour["IsHighSeason"] = np.where((hour["season2"] == 3), 1, 0)
     hour["IsHighSeason"] = hour["IsHighSeason"].astype("category")
 
     # Bins for temperature and humidity (5)
     bins = [0, 0.19, 0.49, 0.69, 0.89, 1]
-    hour["temp_binned"] = pd.cut(hour["temp2"],bins).astype("category")
+    hour["temp_binned"] = pd.cut(hour["temp2"], bins).astype("category")
     hour["hum_binned"] = pd.cut(hour["hum2"], bins).astype("category")
 
     return hour
@@ -54,33 +62,43 @@ def preprocess(hour):
     hour["weekday2"] = hour["weekday"]
 
     # Convert to datetime
-    hour["dteday"] =pd.to_datetime(hour["dteday"])
+    hour["dteday"] = pd.to_datetime(hour["dteday"])
 
     # Convert data type to category or float
-    int_hour = ["season", "yr", "mnth", "hr", "holiday", "weekday", "workingday", "weathersit",]
+    int_hour = [
+        "season",
+        "yr",
+        "mnth",
+        "hr",
+        "holiday",
+        "weekday",
+        "workingday",
+        "weathersit",
+    ]
     for col in int_hour:
         hour[col] = hour[col].astype("category")
 
     # Log1p
-    logws = round(skew(np.log1p(hour.windspeed)),4)
+    logws = round(skew(np.log1p(hour.windspeed)), 4)
 
     # Sqrt of count
-    sqrtws = round(skew(np.sqrt(hour.windspeed)),4)
+    sqrtws = round(skew(np.sqrt(hour.windspeed)), 4)
     hour["windspeed"] = np.log1p(hour.windspeed)
 
     # Log of count
-    logcnt = round(skew(np.log(hour.cnt)),4)
+    logcnt = round(skew(np.log(hour.cnt)), 4)
 
     # Sqrt of count
-    sqrtcnt = round(skew(np.sqrt(hour.cnt)),4)
+    sqrtcnt = round(skew(np.sqrt(hour.cnt)), 4)
     hour["cnt"] = np.sqrt(hour.cnt)
 
     hour = feature_engineering(hour)
 
     # Drop duplicated columns used for feature_engineering
-    hour = hour.drop(columns = ["hr2", "season2", "temp2", "hum2", "weekday2"])
+    hour = hour.drop(columns=["hr2", "season2", "temp2", "hum2", "weekday2"])
 
     return hour
+
 
 def dummify(hour, known_columns=None):
     hour = pd.get_dummies(hour)
@@ -92,13 +110,14 @@ def dummify(hour, known_columns=None):
 
     return hour
 
+
 def split_train_test(hour):
     hour = hour.copy()
 
     # Split
     hour_train, hour_test = hour.iloc[0:15211], hour.iloc[15212:17379]
-    train = hour_train.drop(columns=["dteday", "casual", "atemp","registered"])
-    test = hour_test.drop(columns=["dteday", "casual", "atemp","registered"])
+    train = hour_train.drop(columns=["dteday", "casual", "atemp", "registered"])
+    test = hour_test.drop(columns=["dteday", "casual", "atemp", "registered"])
 
     # Separate features from target on the test set
     test_X = test.drop(columns=["cnt"], axis=1)
@@ -112,7 +131,10 @@ def train_random_forest(hour):
 
     hour_d = pd.get_dummies(hour)
     regex = re.compile(r"\[|\]|<", re.IGNORECASE)
-    hour_d.columns = [regex.sub("_", col) if any(x in str(col) for x in set(("[", "]", "<"))) else col for col in hour_d.columns.values]
+    hour_d.columns = [
+        regex.sub("_", col) if any(x in str(col) for x in set(("[", "]", "<"))) else col
+        for col in hour_d.columns.values
+    ]
 
     hour_d = hour_d.select_dtype(exclude="category")
 
@@ -129,14 +151,16 @@ def train_random_forest(hour):
     rf.fit(hour_d_train_x, hour_d_train_y)
     return rf
 
+
 def postprocess(hour):
     hour = hour.copy()
 
     hour.columns = hour.columns.str.replace("[\[\]\<]", "_")
     return hour
 
-def train_and_persist(model_dir = None, hour_path = None):
-    #set default values to None in case no dir param is specified
+
+def train_and_persist(model_dir=None, hour_path=None):
+    # set default values to None in case no dir param is specified
     hour = read_data(hour_path)
     hour = preprocess(hour)
     hour = dummify(hour)
@@ -156,9 +180,11 @@ def get_input_dict(parameters):
     date = parameters["date"]
 
     is_holiday = date in US_holidays
-    is_weekend = date.weekday() in (5,6)
+    is_weekend = date.weekday() in (5, 6)
 
-    row = pd.Series({            "dteday": date.strftime("%Y-%m-%d"),
+    row = pd.Series(
+        {
+            "dteday": date.strftime("%Y-%m-%d"),
             "season": get_season(date),
             "yr": date.year - base_year,
             "mnth": date.month,
@@ -172,7 +198,8 @@ def get_input_dict(parameters):
             "hum": parameters["humidity"] / 100.0,
             "windspeed": parameters["windspeed"] / 67.0,
             "cnt": 1,  # Dummy, unused for prediction
-})
+        }
+    )
 
     dummiefied_original = dummify(preprocess(hour_original))
 
@@ -181,7 +208,7 @@ def get_input_dict(parameters):
     df = dummify(df, dummiefied_original.columns)
     df = postprocess(df)
 
-    df = df.drop(columns = ["dteday", "atemp", "casual", "registered", "cnt"])
+    df = df.drop(columns=["dteday", "atemp", "casual", "registered", "cnt"])
 
     assert len(df) == 1
 
@@ -202,4 +229,4 @@ def predict(parameters, model_dir=None):
 
     result = model.predict(X_input)
 
-    return int(result ** 2) # to undo np.sqrt(hour["count"])
+    return int(result ** 2)  # to undo np.sqrt(hour["count"])
