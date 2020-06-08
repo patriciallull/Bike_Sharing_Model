@@ -136,7 +136,7 @@ def train_random_forest(hour):
         for col in hour_d.columns.values
     ]
 
-    hour_d = hour_d.select_dtype(exclude="category")
+    hour_d = hour_d.select_dtypes(exclude="category")
 
     hour_d_train_x, _, hour_d_train_y, _, = split_train_test(hour_d)
 
