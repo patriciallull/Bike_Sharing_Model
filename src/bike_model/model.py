@@ -10,7 +10,7 @@ from pandas.tseries.holiday import USFederalHolidayCalendar as calendar
 from scipy.stats import skew
 from xgboost import XGBRegressor
 
-from bike_model.util2 import read_data, get_season, get_model_path
+from bike_model.util import read_data, get_season, get_model_path
 
 
 US_HOLIDAYS = calendar().holidays()
